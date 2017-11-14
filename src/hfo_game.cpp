@@ -177,9 +177,9 @@ void HFOGameState::update(HFOEnvironment& hfo) {
 }
 
 float HFOGameState::reward() {
-  float moveToBallReward = move_to_ball_reward();
-  float kickToGoalReward = 3. * kick_to_goal_reward();
-  float passReward = 3. * pass_reward();
+  float moveToBallReward = 0; // move_to_ball_reward();
+  float kickToGoalReward = 0; //3. * kick_to_goal_reward();
+  float passReward = 0; //3. * pass_reward();
   float eotReward = EOT_reward();
   float reward = moveToBallReward + kickToGoalReward + eotReward;
   extrinsic_reward += eotReward;
