@@ -70,7 +70,9 @@ void ZeroGradParameters(caffe::Net<Dtype>& net) {
                          blob->mutable_cpu_diff());
         break;
       case caffe::Caffe::GPU:
-        caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
+        // caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
+        //                      blob->mutable_gpu_diff());
+        caffe::caffe_set(blob->count(), Dtype(0),
                              blob->mutable_gpu_diff());
         break;
     }
@@ -905,8 +907,11 @@ std::pair<float,float> DQN::UpdateActorCritic() {
   float critic_loss = loss_blob->data_at(0,0,0,0);
   CHECK(std::isfinite(critic_loss)) << "Critic loss not finite!";
   // Update the actor
+  DLOG(INFO) << "  Before Zero Grad Params (critic)";
   ZeroGradParameters(*critic_net_);
+  DLOG(INFO) << "  After Zero Grad Params (critic)";
   ZeroGradParameters(*actor_net_);
+  DLOG(INFO) << "  After Zero Grad Params (actor)";
   std::vector<ActorOutput> actor_output_batch =
       SelectActionGreedily(*actor_net_, states_batch);
   DLOG(INFO) << "ActorOutput:  " << PrintActorOutput(actor_output_batch[0]);
