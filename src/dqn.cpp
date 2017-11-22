@@ -64,18 +64,20 @@ template <typename Dtype>
 void ZeroGradParameters(caffe::Net<Dtype>& net) {
   for (int i = 0; i < net.params().size(); ++i) {
     caffe::shared_ptr<caffe::Blob<Dtype> > blob = net.params()[i];
+    DLOG(INFO) << "  Before switch";
     switch (caffe::Caffe::mode()) {
+      DLOG(INFO) << "  after switch: cpu";
       case caffe::Caffe::CPU:
         caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
                          blob->mutable_cpu_diff());
         break;
       case caffe::Caffe::GPU:
-        // caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
-        //                      blob->mutable_gpu_diff());
-        caffe::caffe_set(blob->count(), Dtype(0),
+        DLOG(INFO) << "  after switch: gpu";
+        caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
                              blob->mutable_gpu_diff());
         break;
     }
+    DLOG(INFO) << "  switch complete";
   }
 }
 
