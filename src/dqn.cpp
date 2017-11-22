@@ -70,11 +70,13 @@ void ZeroGradParameters(caffe::Net<Dtype>& net) {
       case caffe::Caffe::CPU:
         caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
                          blob->mutable_cpu_diff());
+        DLOG(INFO) << "  after set: gpu";
         break;
       case caffe::Caffe::GPU:
         DLOG(INFO) << "  after switch: gpu";
         caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
                              blob->mutable_gpu_diff());
+        DLOG(INFO) << "  after set: gpu";
         break;
     }
     DLOG(INFO) << "  switch complete";
