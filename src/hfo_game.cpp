@@ -222,7 +222,7 @@ float HFOGameState::EOT_reward() {
       return 5;
     } else {
       VLOG(1) << "Teammate Scored!";
-      return 1;
+      return 5;
     }
   } else if (status == CAPTURED_BY_DEFENSE) {
     return 0;
