@@ -42,13 +42,13 @@ int main(int argc, char** argv) {
       float orientation = feature_vec[2];
       float ball_prox = feature_vec[3];
       float ball_ang = feature_vec[4];
-      if (feature_vec[5] == 1) {
-        hfo.act(CATCH);
-      } else if (fabs(ball_ang - orientation) > .1) {
-        hfo.act(TURN, 90.0 * (ball_ang - orientation));
-      } else {
-        hfo.act(DASH, 100., 0.);
-      }
+      // if (feature_vec[5] == 1) {
+      //   hfo.act(CATCH);
+      // } else if (fabs(ball_ang - orientation) > .1) {
+      //   hfo.act(TURN, 90.0 * (ball_ang - orientation));
+      // } else {
+      //   hfo.act(DASH, 100., 0.);
+      // }
       // Advance the environment and get the game status
       status = hfo.step();
     }
