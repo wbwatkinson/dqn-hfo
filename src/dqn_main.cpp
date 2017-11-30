@@ -207,6 +207,7 @@ void KeepPlayingGames(int tid, std::string save_prefix, int port) {
   LOG(INFO) << "Thread " << tid << ", port=" << port << ", save_prefix=" << save_prefix;
   if (FLAGS_gpu) {
     caffe::Caffe::set_mode(caffe::Caffe::GPU);
+    caffe::Caffe::set_device("0,1");
   } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
