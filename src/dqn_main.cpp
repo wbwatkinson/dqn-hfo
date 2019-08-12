@@ -121,6 +121,7 @@ std::tuple<double, int, status_t, double> PlayOneEpisode(HFOEnvironment& hfo,
       dqn::InputStates input_states;
       std::copy(past_states.begin(), past_states.end(), input_states.begin());
       dqn::ActorOutput actor_output = dqn.SelectAction(input_states, epsilon);
+      // change to VLOG(1)
       VLOG(1) << "Step " << game.steps;
       VLOG(1) << "Actor_output: " << dqn::PrintActorOutput(actor_output);
       Action action = dqn::GetAction(actor_output);
@@ -206,7 +207,11 @@ double Evaluate(HFOEnvironment& hfo, dqn::DQN& dqn, int tid) {
 void KeepPlayingGames(int tid, std::string save_prefix, int port) {
   LOG(INFO) << "Thread " << tid << ", port=" << port << ", save_prefix=" << save_prefix;
   if (FLAGS_gpu) {
+    LOG(INFO) << "GPU Mode";
     caffe::Caffe::set_mode(caffe::Caffe::GPU);
+    //caffe::Caffe::DeviceQuery();
+    //exit(0);
+    caffe::Caffe::SetDevice(0);
   } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
@@ -352,9 +357,10 @@ void KeepPlayingGames(int tid, std::string save_prefix, int port) {
   for (int episode = 0; dqn->max_iter() < FLAGS_max_iter; ++episode) {
     double epsilon = CalculateEpsilon(dqn->max_iter());
     auto result = PlayOneEpisode(env, *dqn, epsilon, true, tid);
-    LOG(INFO) << "[Agent" << tid <<"] Episode " << episode
-              << " reward = " << std::get<0>(result);
     int steps = std::get<1>(result);
+    LOG(INFO) << "[Agent" << tid <<"] Episode " << episode
+              << " reward = " << std::get<0>(result) << " steps = " << steps
+              << " iter = " << dqn->actor_iter(); // << " critic iter = " << dqn->critic_iter();
     int n_updates = int(steps * FLAGS_update_ratio);
     if (FLAGS_share_replay_memory) { MTX.lock(); }
     for (int i=0; i<n_updates; ++i) {

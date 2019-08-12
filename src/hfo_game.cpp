@@ -32,7 +32,8 @@ void StartHFOServer(int port, int offense_agents, int offense_npcs,
       + " --ball-x-max " + std::to_string(FLAGS_ball_x_max)
       + " --ball-y-min " + std::to_string(FLAGS_ball_y_min)
       + " --ball-y-max " + std::to_string(FLAGS_ball_y_max)
-      + " --offense-on-ball " + std::to_string(FLAGS_offense_on_ball);
+      + " --offense-on-ball " + std::to_string(FLAGS_offense_on_ball)
+      + " --untouched-time 500";
   if (!FLAGS_gui) { cmd += " --headless"; }
   if (!FLAGS_log_game) { cmd += " --no-logging"; }
   if (FLAGS_verbose) { cmd += " --verbose"; }
@@ -217,13 +218,15 @@ float HFOGameState::EOT_reward() {
   if (status == GOAL) {
     CHECK(old_player_on_ball.side == LEFT) << "Unexpected side: "
                                            << old_player_on_ball.side;
-    if (player_on_ball.unum == our_unum) {
-      VLOG(1) << "We Scored!";
-      return 5;
-    } else {
-      VLOG(1) << "Teammate Scored!";
-      return 1;
-    }
+
+    return 5.0;
+    // if (player_on_ball.unum == our_unum) {
+    //   VLOG(1) << "We Scored!";
+    //   return 5;
+    // } else {
+    //   VLOG(1) << "Teammate Scored!";
+    //   return 1;
+    // }
   } else if (status == CAPTURED_BY_DEFENSE) {
     return 0;
   }

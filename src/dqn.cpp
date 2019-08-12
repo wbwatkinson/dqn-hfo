@@ -59,6 +59,29 @@ int GetLayerIndex(caffe::Net<Dtype>& net, const std::string& layer_name) {
   return indx;
 }
 
+// Change  this
+// void debug_nested(std::vector<int> &vect) {
+//   for (size_t i=0; i<vect.size(); ++i {
+//     LOG(INFO) << "hello";
+//   }
+// }
+  // std::vector<ActorOutput> actions = SelectActionGreedily(*actor_net_, states_batch);
+  // std::string output;
+  // output = "[" + std::to_string(max_iter()) + "]" + " Actions: \n";
+  // for (size_t i=0; i < kMinibatchSize; ++i) {
+  //   output += "[";
+  //   for (size_t k=0; k < 10; ++k) {
+  //     output += std::to_string(actions[i][k]);
+  //     if (k < 9) {output += ", ";}
+  //   }
+  //   output += "]\n";
+  // }
+  // LOG(INFO) << output;
+
+// void debug_nested(){
+
+// }
+
 // Zeros the gradients accumulated by each forward/backward pass.
 template <typename Dtype>
 void ZeroGradParameters(caffe::Net<Dtype>& net) {
@@ -678,6 +701,17 @@ ActorOutput DQN::GetRandomActorOutput() {
       std::uniform_real_distribution<float>(0.0, 100.0)(random_engine);
   actor_output[kActionSize + 5] = // Kick Angle
       std::uniform_real_distribution<float>(-180.0, 180.0)(random_engine);
+  // Added
+  // actor_output[0] = std::uniform_real_distribution<float>(-1.0,0.0)(random_engine);
+  // actor_output[1] = std::uniform_real_distribution<float>(-1.0,0.0)(random_engine);
+  // actor_output[2] = std::uniform_real_distribution<float>(-1.0,0.0)(random_engine);
+  // actor_output[3] = 1.0;
+  // actor_output[4] = 0.0;
+  // actor_output[5] = 0.0;
+  // actor_output[6] = 0.0;
+  // actor_output[7] = 0.0;
+  // actor_output[8] = 40.0;
+  // actor_output[9] = 0.0;
   return actor_output;
 }
 
@@ -790,10 +824,10 @@ void DQN::LabelTransitions(std::vector<Transition>& transitions) {
     float target = std::get<3>(transitions[i+1]);
     std::get<3>(t) = reward + gamma_ * target;
   }
-  // for (const Transition & t : transitions) {
-  //   LOG(INFO) << "Transition reward " << std::get<2>(t)
-  //             << " QVal " << std::get<3>(t);
-  // }
+  for (const Transition & t : transitions) {
+    DLOG(INFO) << "Transition reward " << std::get<2>(t)
+              << " QVal " << std::get<3>(t);
+  }
 }
 
 void DQN::Update() {
@@ -955,6 +989,7 @@ std::pair<float,float> DQN::UpdateActorCritic() {
       param_diff[offset] = diff;
     }
   }
+  // Change to DLOG "Diff2 " << PrintActorOutput(action_diff, param_diff);
   DLOG(INFO) << "Diff2 " << PrintActorOutput(action_diff, param_diff);
   // Transfer input-level diffs from Critic to Actor
   actor_actions_blob->ShareDiff(*critic_action_blob);
