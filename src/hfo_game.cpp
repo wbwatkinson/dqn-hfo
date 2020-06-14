@@ -219,14 +219,14 @@ float HFOGameState::EOT_reward() {
     CHECK(old_player_on_ball.side == LEFT) << "Unexpected side: "
                                            << old_player_on_ball.side;
 
-    return 5.0;
-    // if (player_on_ball.unum == our_unum) {
-    //   VLOG(1) << "We Scored!";
-    //   return 5;
-    // } else {
-    //   VLOG(1) << "Teammate Scored!";
-    //   return 1;
-    // }
+    // return 5.0;
+    if (player_on_ball.unum == our_unum) {
+      VLOG(1) << "We Scored!";
+      return 5;
+    } else {
+      VLOG(1) << "Teammate Scored!";
+      return 1;
+    }
   } else if (status == CAPTURED_BY_DEFENSE) {
     return 0;
   }
