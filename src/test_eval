@@ -1,0 +1,111 @@
+
+#include "dqn.hpp"
+#include <HFO.hpp>
+#include <boost/filesystem.hpp>
+
+#include <glog/logging.h>
+#include <gflags/gflags.h>
+
+
+using namespace boost::filesystem;
+using namespace hfo;
+
+DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_bool(benchmark, false, "Benchmark the network and exit");
+DEFINE_bool(learn_offline, false, "Just do updates on a fixed replaymemory.");
+// Load/Save Args
+DEFINE_string(save, "", "Prefix for saving snapshots");
+DEFINE_string(resume, "", "Prefix for resuming from. Default=save_path");
+DEFINE_string(actor_weights, "", "The actor pretrained weights load (*.caffemodel).");
+DEFINE_string(critic_weights, "", "The critic pretrained weights load (*.caffemodel).");
+DEFINE_string(actor_snapshot, "", "The actor solver state to load (*.solverstate).");
+DEFINE_string(critic_snapshot, "", "The critic solver state to load (*.solverstate).");
+DEFINE_string(memory_snapshot, "", "The replay memory to load (*.replaymemory).");
+// Solver Args
+DEFINE_string(solver, "Adam", "Solver Type.");
+DEFINE_double(momentum, .95, "Solver momentum.");
+DEFINE_double(momentum2, .999, "Solver momentum2.");
+DEFINE_double(actor_lr, .00001, "Solver learning rate.");
+DEFINE_double(critic_lr, .001, "Solver learning rate.");
+DEFINE_double(clip_grad, 10, "Clip gradients.");
+DEFINE_string(lr_policy, "fixed", "LR Policy.");
+DEFINE_int32(max_iter, 10000000, "Custom max iter.");
+// Epsilon-Greedy Args
+DEFINE_int32(explore, 10000, "Iterations for epsilon to reach given value.");
+DEFINE_double(epsilon, .1, "Value of epsilon after explore iterations.");
+DEFINE_double(evaluate_with_epsilon, 0, "Epsilon value to be used in evaluation mode");
+// Evaluation Args
+DEFINE_bool(evaluate, false, "Evaluation mode: only playing a game, no updates");
+DEFINE_int32(evaluate_freq, 10000, "Frequency (steps) between evaluations");
+DEFINE_int32(repeat_games, 100, "Number of games played in evaluation mode");
+// Misc Args
+DEFINE_double(update_ratio, 0.1, "Ratio of new experiences to updates.");
+// Sharing
+DEFINE_int32(share_actor_layers, 0, "Share layers between actor networks.");
+DEFINE_int32(share_critic_layers, 0, "Share layers between critic networks.");
+DEFINE_bool(share_replay_memory, false, "Shares replay memory between agents.");
+// Game configuration
+DEFINE_int32(offense_agents, 1, "Number of agents playing offense");
+DEFINE_int32(offense_npcs, 0, "Number of npcs playing offense");
+DEFINE_int32(defense_agents, 0, "Number of agents playing defense");
+DEFINE_int32(defense_npcs, 0, "Number of npcs playing defense");
+DEFINE_int32(offense_dummies, 0, "Number of dummy npcs playing offense");
+DEFINE_int32(defense_dummies, 0, "Number of dummy npcs playing defense");
+DEFINE_int32(defense_chasers, 0, "Number of chasers playing defense");
+
+int main(int argc, char** argv) {
+
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  google::InitGoogleLogging(argv[0]);
+
+  google::LogToStderr();
+
+
+  int num_features = 59;
+  int tid = 0;
+
+  path save_path(FLAGS_save);
+  std::string save_prefix = save_path.native() + "_agent" + std::to_string(0);
+
+
+  caffe::SolverParameter actor_solver_param;
+  caffe::SolverParameter critic_solver_param;
+
+
+  caffe::Caffe::set_mode(caffe::Caffe::GPU);
+  caffe::NetParameter* actor_net_param = actor_solver_param.mutable_net_param();
+  std::string actor_net_filename = save_prefix + "_actor.prototxt";
+  if (boost::filesystem::is_regular_file(actor_net_filename)) {
+    caffe::ReadProtoFromTextFileOrDie(actor_net_filename.c_str(), actor_net_param);
+  } else {
+    actor_net_param->CopyFrom(dqn::CreateActorNet(num_features));
+    WriteProtoToTextFile(*actor_net_param, actor_net_filename.c_str());
+  }
+  caffe::NetParameter* critic_net_param = critic_solver_param.mutable_net_param();
+  std::string critic_net_filename = save_prefix + "_critic.prototxt";
+  if (boost::filesystem::is_regular_file(critic_net_filename)) {
+    caffe::ReadProtoFromTextFileOrDie(critic_net_filename.c_str(), critic_net_param);
+  } else {
+    critic_net_param->CopyFrom(dqn::CreateCriticNet(num_features));
+    WriteProtoToTextFile(*critic_net_param, critic_net_filename.c_str());
+  }
+  actor_solver_param.set_snapshot_prefix((save_prefix + "_actor").c_str());
+  critic_solver_param.set_snapshot_prefix((save_prefix + "_critic").c_str());
+  actor_solver_param.set_max_iter(FLAGS_max_iter);
+  critic_solver_param.set_max_iter(FLAGS_max_iter);
+  actor_solver_param.set_type(FLAGS_solver);
+  critic_solver_param.set_type(FLAGS_solver);
+  actor_solver_param.set_base_lr(FLAGS_actor_lr);
+  critic_solver_param.set_base_lr(FLAGS_critic_lr);
+  actor_solver_param.set_lr_policy(FLAGS_lr_policy);
+  critic_solver_param.set_lr_policy(FLAGS_lr_policy);
+  actor_solver_param.set_momentum(FLAGS_momentum);
+  critic_solver_param.set_momentum(FLAGS_momentum);
+  actor_solver_param.set_momentum2(FLAGS_momentum2);
+  critic_solver_param.set_momentum2(FLAGS_momentum2);
+  actor_solver_param.set_clip_gradients(FLAGS_clip_grad);
+  critic_solver_param.set_clip_gradients(FLAGS_clip_grad);
+
+  dqn::DQN* agent = new dqn::DQN(actor_solver_param, critic_solver_param, save_prefix, 59, tid);
+
+}

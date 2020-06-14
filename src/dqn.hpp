@@ -128,6 +128,8 @@ public:
   int max_iter() const { return std::max(actor_iter(), critic_iter()); }
   int critic_iter() const { return critic_solver_->iter(); }
   int actor_iter() const { return actor_solver_->iter(); }
+  float critic_loss() const { return last_update_critic_loss_; }
+  float actor_loss() const { return last_update_actor_loss_; }
   int state_size() const { return state_size_; }
   const std::string& save_path() const { return save_path_; }
   int unum() const { return unum_; }
@@ -193,6 +195,7 @@ protected:
   NetSp actor_target_net_; // Clone of the actor net. Used to generate targets.
   std::mt19937 random_engine;
   float smoothed_critic_loss_, smoothed_actor_loss_;
+  float last_update_critic_loss_, last_update_actor_loss_;
   int last_snapshot_iter_;
   std::string save_path_;
   const int state_size_; // Number of state features

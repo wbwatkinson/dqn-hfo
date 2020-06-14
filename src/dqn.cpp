@@ -37,9 +37,21 @@ void HasBlobSize(caffe::Net<Dtype>& net,
   CHECK(net.has_blob(blob_name)) << "Net does not have blob named " << blob_name;
   const caffe::Blob<Dtype>& blob = *net.blob_by_name(blob_name);
   const std::vector<int>& blob_shape = blob.shape();
+  //LOG(INFO) << "Blob Shape Size: " << blob_shape.size() << " / " << "Expected Shape Size: " << expected_shape.size();
   CHECK_EQ(blob_shape.size(), expected_shape.size())
       << "Blob \"" << blob_name << "\" has " << blob_shape.size()
       << " dimensions. Expected " << expected_shape.size();
+
+  std::ostringstream blob_stream;
+  std::copy(blob_shape.begin(), blob_shape.end()-1, std::ostream_iterator<int>(blob_stream, ","));
+  blob_stream << blob_shape.back();
+
+  std::ostringstream expected_stream;
+  std::copy(expected_shape.begin(), expected_shape.end()-1, std::ostream_iterator<int>(expected_stream, ","));
+  expected_stream << expected_shape.back();
+
+  LOG(INFO) << "Blob " << blob_name << "Shape: " << blob_stream.str() << " / " << "Expected Shape: " << expected_stream.str();
+
   CHECK(std::equal(blob_shape.begin(), blob_shape.end(),
                    expected_shape.begin()))
       << "Blob \"" << blob_name << "\" failed dimension check.";
@@ -152,6 +164,7 @@ void FindLatestSnapshot(const std::string& snapshot_prefix,
   int actor_max_iter = FindGreatestIter(actor_regexp);
   int critic_max_iter = FindGreatestIter(critic_regexp);
   int memory_max_iter = FindGreatestIter(memory_regexp);
+  LOG(INFO) << "Prefix: " << snapshot_prefix << ", Actor Max Iter: " << actor_max_iter << ", Critic Max Iter: " << critic_max_iter << ", " << "Memory Max Iter: " << memory_max_iter;
   if (actor_max_iter > 0) {
     actor_snapshot = snapshot_prefix + "_actor_iter_"
         + std::to_string(actor_max_iter) + ".solverstate";
@@ -494,6 +507,7 @@ DQN::DQN(caffe::SolverParameter& actor_solver_param,
         state_input_data_size_(kMinibatchSize * state_size * kStateInputCount),
         tid_(tid),
         unum_(0) {
+  LOG(INFO) << "Initializing DQN with " << state_size_ << " features.";
   if (FLAGS_seed <= 0) {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     LOG(INFO) << "Seeding RNG to time (seed = " << seed << ")";
@@ -837,6 +851,8 @@ void DQN::Update() {
   std::pair<float,float> res = UpdateActorCritic();
   float critic_loss = res.first;
   float avg_q = res.second;
+  last_update_critic_loss_ = critic_loss;
+  last_update_actor_loss_ = avg_q;
   if (critic_iter() % FLAGS_loss_display_iter == 0) {
     LOG(INFO) << "[Agent" << tid_ << "] Critic Iteration " << critic_iter()
               << ", loss = " << smoothed_critic_loss_;
