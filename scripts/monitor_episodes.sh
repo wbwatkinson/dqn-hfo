@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-folders="test_empty_goal_padded/ddpg test_defended_goal/ddpg test_empty_goal/ddpg"
+folders="test_empty_goal_padded test_defended_goal test_empty_goal"
 
 for f in ${folders}
 do
-	f="../${f}/dqn.INFO"
+	f="/dqn.INFO"
 	# f+="/dqn.INFO"
 	header="==> ${f} <=="
 	detail=$(grep 'Episode' $f | tail -1)
