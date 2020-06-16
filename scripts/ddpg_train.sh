@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 function launch() {
-	rm -r $2
-	mkdir $2
-	tmux new -d -s $1
-	tmux send -t $1 '$3 > /dev/null &' C-m
+	rm -r "$2"
+	mkdir "$2"
+	tmux new -d -s "$1"
+	tmux send -t "$1" '"$3" > /dev/null &' C-m
 	sleep 10
 }
 
