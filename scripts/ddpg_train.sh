@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 function launch() {
-	echo $3
-	echo rm -r "$2"
-	echo mkdir "$2"
-	echo tmux new -d -s "$1"
-	echo tmux send -t "$1" '"$3" > /dev/null &' C-m
-	echo sleep 10
+	rm -r "$2"
+	mkdir "$2"
+	tmux new -d -s "$1"
+	tmux send -t $1 "$3 > /dev/null &" C-m
+	sleep 10
 }
 
 # 2020-06-16
@@ -17,11 +16,11 @@ gpu_start=0
 gpu_count=2
 for v in $values
 do
-	JOB="empty_goal_$v"
-	SAVE="~/projects/dqn-hfo/$JOB"
+	JOB=empty_goal_$v
+	SAVE=~/projects/dqn-hfo/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + 3 * $count))
-	PID="dqn --save $SAVE --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --offense_on_ball 0 --beta 0.2 --max_iter 3000000 --port $PORT"
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --offense_on_ball 0 --beta 0.2 --max_iter 3000000 --port $PORT"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
