@@ -32,3 +32,5 @@ log/
 build/
 scripts/
 state/
+
+.DS_Store
