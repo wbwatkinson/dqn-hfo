@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-folders="test_empty_goal_padded test_defended_goal test_empty_goal"
+folders="empty_goal_000 empty_goal_001 empty_goal_002 empty_goal_003 empty_goal_004 empty_goal_005 empty_goal_006 empty_goal_007"
 
 for f in ${folders}
 do
