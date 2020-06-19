@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Evaluate command
+# ./bin/dqn --evaluate --save results/empty_000 --actor_snapshot empty_goal_000/ddpg_agent0_actor_iter_3000000.solverstate --critic_snapshot empty_goal_000/ddpg_agent0_critic_iter_3000000.solverstate --memory_snapshot empty_goal_000/ddpg_agent0_iter_3000000.replaymemory --offense_agents 1
+
+#./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1450000.solverstate --critic_snapshot empty_goal_000/ddpg_agent0_critic_iter_1450000.solverstate --memory_snapshot empty_goal_000/ddpg_agent0_iter_1450000.replaymemory --offense_agents 1 --defense_npcs 1
+
+# ./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1000000.solverstate --critic_snapshot defended_goal_000/ddpg_agent0_critic_iter_1000000.solverstate --memory_snapshot defended_goal_000/ddpg_agent0_iter_1000000.replaymemory --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --log_game --team_name "defended"
+
 function launch() {
 	rm -r "$2"
 	mkdir "$2"
@@ -7,6 +14,24 @@ function launch() {
 	tmux send -t $1 "$3 > /dev/null &" C-m
 	sleep 10
 }
+
+# 2020-06-19
+# Defended goal demo using original feature set (59 values) and order, with ball and fullstate
+values="001"
+count=0
+port_base=40003
+gpu_start=1
+gpu_count=2
+for v in $values
+do
+	JOB=defended_goal_$v
+	SAVE=~/projects/dqn-hfo/$JOB
+	GPU=$(($gpu_start + $count % $gpu_count))
+	PORT=$(($port_base + 3 * $count))
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_agents --offense_on_ball 1 --beta 0.2 --fullstate --max_iter 10000000 --port $PORT"
+	launch $JOB $SAVE "$PID"
+	count=$(($count+1))
+done
 
 # 2020-06-18
 # Defended goal demo using original feature set (59 values) and order, with ball
