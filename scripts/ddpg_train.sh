@@ -28,7 +28,7 @@ do
 	SAVE=~/projects/dqn-hfo/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + 3 * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_agents --offense_on_ball 1 --beta 0.2 --fullstate --max_iter 10000000 --port $PORT"
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --beta 0.2 --fullstate --max_iter 10000000 --port $PORT"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
