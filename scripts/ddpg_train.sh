@@ -5,7 +5,7 @@
 
 #./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1450000.solverstate --critic_snapshot empty_goal_000/ddpg_agent0_critic_iter_1450000.solverstate --memory_snapshot empty_goal_000/ddpg_agent0_iter_1450000.replaymemory --offense_agents 1 --defense_npcs 1
 
-# ./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1000000.solverstate --critic_snapshot defended_goal_000/ddpg_agent0_critic_iter_1000000.solverstate --memory_snapshot defended_goal_000/ddpg_agent0_iter_1000000.replaymemory --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --log_game --team_name "defended"
+# ./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1000000.solverstate --critic_snapshot defended_goal_000/ddpg_agent0_critic_iter_1000000.solverstate --memory_snapshot defended_goal_000/ddpg_agent0_iter_1000000.replaymemory --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --log_game --log-dir "logs/defended_000"
 
 function launch() {
 	rm -r "$2"
@@ -16,33 +16,15 @@ function launch() {
 }
 
 # 2020-06-19
-# Defended goal demo using original feature set (59 values) and order, with ball and fullstate
-# values="001"
-# count=0
-# port_base=40003
-# gpu_start=1
-# gpu_count=2
-# for v in $values
-# do
-# 	JOB=defended_goal_$v
-# 	SAVE=~/projects/dqn-hfo/$JOB
-# 	GPU=$(($gpu_start + $count % $gpu_count))
-# 	PORT=$(($port_base + 3 * $count))
-# 	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --beta 0.2 --max_iter 10000000 --port $PORT"
-# 	launch $JOB $SAVE "$PID"
-# 	count=$(($count+1))
-# done
-
-# 2020-06-18
-# Defended goal demo using original feature set (59 values) and order, with ball
+# Defended goal test, original feature set (59 values) and order, with offense on ball 
 values="000 001"
 count=0
-port_base=40000
+port_base=40010
 gpu_start=0
 gpu_count=2
 for v in $values
 do
-	JOB=defended_goal_$v
+	JOB=test_defended_goal_on_ball_$v
 	SAVE=~/projects/dqn-hfo/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + 3 * $count))
@@ -51,6 +33,26 @@ do
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
+
+
+# 2020-06-18
+# Defended goal demo using original feature set (68 values) and order, with ball
+# values="000 001"
+# count=0
+# port_base=40000
+# gpu_start=0
+# gpu_count=2
+# for v in $values
+# do
+# 	JOB=defended_goal_$v
+# 	SAVE=~/projects/dqn-hfo/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + 3 * $count))
+# 	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --beta 0.2 --max_iter 10000000 --port $PORT"
+# #	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_npcs 1 --beta 0.2 --max_iter 10000000 --port $PORT"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
 
 
 # 2020-06-16
