@@ -26,7 +26,7 @@ do
 	JOB=test_resequence_values_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo-logging --log-dir log/test --port $PORT"
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --log_game --log_dir log/test --port $PORT"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
@@ -35,12 +35,12 @@ values="001"
 count=0
 port_base=40030
 num_agents=2
-for v in values
+for v in $values
 do
 	JOB=test_resequence_values_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo-logging --log-dir log/test --resequence-features --port $PORT"
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --log_game --log_dir log/test --resequence-features --port $PORT"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
