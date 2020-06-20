@@ -19,7 +19,7 @@ function launch() {
 # Defended goal test, original feature set (59 values) and order, with offense on ball 
 values="000 001"
 count=0
-port_base=40010
+port_base=40020
 gpu_start=0
 gpu_count=2
 for v in $values
