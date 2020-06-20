@@ -9,30 +9,60 @@
 
 function launch() {
 	rm -r "$2"
-	mkdir "$2"
+	mkdir -p "$2"
 	tmux new -d -s "$1"
 	tmux send -t $1 "$3 > /dev/null &" C-m
 	sleep 10
 }
 
-# 2020-06-19
-# Defended goal test, original feature set (59 values) and order, with offense on ball 
-values="000 001"
+# 2020-06-20
+# verify resequence features
+values="000"
 count=0
-port_base=40020
-gpu_start=0
-gpu_count=2
+port_base=40025
+num_agents=2
 for v in $values
 do
-	JOB=test_defended_goal_on_ball_$v
-	SAVE=~/projects/dqn-hfo/$JOB
-	GPU=$(($gpu_start + $count % $gpu_count))
-	PORT=$(($port_base + 3 * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --beta 0.2 --max_iter 10000000 --port $PORT"
-#	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_npcs 1 --beta 0.2 --max_iter 10000000 --port $PORT"
+	JOB=test_resequence_values_$v
+	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	PORT=$(($port_base + ($num_agents + 1) * $count))
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo-logging --log-dir log/test --port $PORT"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
+
+values="001"
+count=0
+port_base=40030
+num_agents=2
+for v in values
+do
+	JOB=test_resequence_values_$v
+	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	PORT=$(($port_base + ($num_agents + 1) * $count))
+	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo-logging --log-dir log/test --resequence-features --port $PORT"
+	launch $JOB $SAVE "$PID"
+	count=$(($count+1))
+done
+
+# 2020-06-19
+# Defended goal test, original feature set (59 values) and order, with offense on ball 
+# values="000 001"
+# count=0
+# port_base=40010
+# gpu_start=0
+# gpu_count=2
+# for v in $values
+# do
+# 	JOB=test_defended_goal_on_ball_$v
+# 	SAVE=~/projects/dqn-hfo/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + 3 * $count))
+# 	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --beta 0.2 --max_iter 10000000 --port $PORT"
+# #	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_npcs 1 --beta 0.2 --max_iter 10000000 --port $PORT"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
 
 
 # 2020-06-18
