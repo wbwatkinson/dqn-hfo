@@ -33,7 +33,7 @@ done
 
 values="001"
 count=0
-port_base=40020
+port_base=40025
 num_agents=2
 for v in values
 do
