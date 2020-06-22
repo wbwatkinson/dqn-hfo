@@ -7,6 +7,13 @@
 
 # ./bin/dqn --evaluate --save results/defended_000 --actor_snapshot defended_goal_000/ddpg_agent0_actor_iter_1000000.solverstate --critic_snapshot defended_goal_000/ddpg_agent0_critic_iter_1000000.solverstate --memory_snapshot defended_goal_000/ddpg_agent0_iter_1000000.replaymemory --offense_agents 1 --defense_npcs 1 --offense_on_ball 1 --log_game --log-dir "logs/defended_000"
 
+# ./bin/dqn --evaluate --save results/test_resequence_000 --actor_snapshot state/test/test_resequence_values_000/ddpg_agent0_actor_iter_10000.solverstate --critic_snapshot state/test/test_resequence_values_000/ddpg_agent0_critic_iter_10000.solverstate --memory_snapshot state/test/test_resequence_values_000/ddpg_agent0_iter_10000.replaymemory --offense_agents 1 --defense_npcs 1 --hfo_seed 123 --deterministic --log_game --record_dir log/test --port 50001 && mv log/test/base_left-11.log log/test/test_resequence_000.log && \
+# ./bin/dqn --evaluate --save results/test_resequence_001 --actor_snapshot state/test/test_resequence_values_001/ddpg_agent0_actor_iter_10000.solverstate --critic_snapshot state/test/test_resequence_values_001/ddpg_agent0_critic_iter_10000.solverstate --memory_snapshot state/test/test_resequence_values_001/ddpg_agent0_iter_10000.replaymemory --offense_agents 1 --defense_npcs 1 --resequence_features --hfo_seed 123 --deterministic --log_game --record_dir log/test --port 50001 > /dev/null && mv log/test/base_left-11.log log/test/test_resequence_001.log && \
+# ./bin/dqn --evaluate --save results/test_resequence_002 --actor_snapshot state/test/test_resequence_values_002/ddpg_agent0_actor_iter_10000.solverstate --critic_snapshot state/test/test_resequence_values_002/ddpg_agent0_critic_iter_10000.solverstate --memory_snapshot state/test/test_resequence_values_002/ddpg_agent0_iter_10000.replaymemory --offense_agents 1 --hfo_seed 123 --deterministic --log_game --record_dir log/test --port 50001 && mv log/test/base_left-11.log log/test/test_resequence_002.log && \
+# ./bin/dqn --evaluate --save results/test_resequence_003 --actor_snapshot state/test/test_resequence_values_003/ddpg_agent0_actor_iter_10000.solverstate --critic_snapshot state/test/test_resequence_values_003/ddpg_agent0_critic_iter_10000.solverstate --memory_snapshot state/test/test_resequence_values_003/ddpg_agent0_iter_10000.replaymemory --offense_agents 1 --resequence_features --hfo_seed 123 --deterministic --log_game --record_dir log/test --port 50001 > /dev/null && mv log/test/base_left-11.log log/test/test_resequence_003.log
+
+
+
 function launch() {
 	rm -r "$2"
 	mkdir -p "$2"
@@ -14,33 +21,74 @@ function launch() {
 	tmux send -t $1 "$3 > /dev/null &" C-m
 	sleep 10
 }
+#--team_name test_001 --log_game --record_dir log/test --log_dir log/test 
 
 # 2020-06-20
 # verify resequence features
 values="000"
 count=0
-port_base=40025
+port_base=40030
+gpu_start=0
+gpu_count=2
 num_agents=2
 for v in $values
 do
 	JOB=test_resequence_values_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --log_game --log_dir log/test --port $PORT"
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
 
 values="001"
-count=0
-port_base=40030
-num_agents=2
+#count=0
+port_base=40035
+# gpu_start=1
+# gpu_count=2
+num_agents+=2
 for v in $values
 do
 	JOB=test_resequence_values_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="~/projects/dqn-hfo/bin/dqn --save $SAVE/ddpg --nogpu --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --log_game --log_dir log/test --resequence-features --port $PORT"
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+	launch $JOB $SAVE "$PID"
+	count=$(($count+1))
+done
+
+values="002"
+#count=0
+port_base=40040
+# gpu_start=0
+# gpu_count=2
+num_agents+=1
+for v in $values
+do
+	JOB=test_resequence_values_$v
+	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	GPU=$(($gpu_start + $count % $gpu_count))
+	PORT=$(($port_base + ($num_agents + 1) * $count))
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+	launch $JOB $SAVE "$PID"
+	count=$(($count+1))
+done
+
+values="003"
+#count=0
+port_base=40045
+# gpu_start=1
+# gpu_count=2
+num_agents+=1
+for v in $values
+do
+	JOB=test_resequence_values_$v
+	SAVE=~/projects/dqn-hfo/state/test/$JOB
+	GPU=$(($gpu_start + $count % $gpu_count))
+	PORT=$(($port_base + ($num_agents + 1) * $count))
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
