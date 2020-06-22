@@ -10,6 +10,7 @@ DEFINE_string(server_cmd, "./bin/HFO --fullstate --frames-per-trial 500",
 DEFINE_string(config_dir, "bin/formations-dt", "Directory containing HFO config files.");
 DEFINE_bool(gui, false, "Open a GUI window.");
 DEFINE_bool(log_game, false, "Log the HFO game.");
+DEFINE_string(game_log_dir, "", "Director to record the logged HFO game.");
 DEFINE_string(server_addr, "localhost", "Address of rcssserver.");
 DEFINE_string(team_name, "base_left", "Name of team for agents.");
 DEFINE_bool(play_goalie, false, "Should the agent play goalie.");
@@ -20,6 +21,9 @@ DEFINE_double(ball_y_min, -0.8, "Ball Y-Position initialization minimum.");
 DEFINE_double(ball_y_max, 0.8, "Ball Y-Position initialization maximum.");
 DEFINE_int32(offense_on_ball, 0, "Offensive player to give the ball to.");
 DEFINE_bool(verbose, false, "Server prints verbose output.");
+DEFINE_int32(hfo_seed, 0, "Seed the server's RNG. Default: time.");
+DEFINE_bool(deterministic, false, "Make HFO environment deterministic.");
+DEFINE_bool(resequence_features, false, "Resequence features so additional players are additive rather than interwoven.");
 
 void StartHFOServer(int port, int offense_agents, int offense_npcs,
                     int defense_agents, int defense_npcs) {
@@ -36,6 +40,10 @@ void StartHFOServer(int port, int offense_agents, int offense_npcs,
       + " --untouched-time 500";
   if (!FLAGS_gui) { cmd += " --headless"; }
   if (!FLAGS_log_game) { cmd += " --no-logging"; }
+  if (FLAGS_hfo_seed != 0) { cmd += " --seed " + std::to_string(FLAGS_hfo_seed); }
+  if (!FLAGS_game_log_dir.empty()) { cmd += " --log-dir " + FLAGS_game_log_dir; }
+  if (FLAGS_deterministic) { cmd += " --deterministic"; }
+  // if (FLAGS_resequence_features) { cmd += " --resequence-features"; }
   if (FLAGS_verbose) { cmd += " --verbose"; }
   LOG(INFO) << "Starting server with command: " << cmd;
   CHECK_EQ(system(cmd.c_str()), 0) << "Unable to start the HFO server.";
@@ -78,7 +86,8 @@ void ConnectToServer(hfo::HFOEnvironment& hfo_env, int port) {
                           FLAGS_server_addr,
                           FLAGS_team_name,
                           FLAGS_play_goalie,
-                          FLAGS_record_dir);
+                          FLAGS_record_dir,
+                          FLAGS_resequence_features);
   sleep(5);
 }
 
