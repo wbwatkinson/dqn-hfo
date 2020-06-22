@@ -23,7 +23,7 @@ function launch() {
 }
 #--team_name test_001 --log_game --record_dir log/test --log_dir log/test 
 
-# 2020-06-20
+# 2020-06-22
 # verify resequence features
 values="000"
 count=0
@@ -33,65 +33,104 @@ gpu_count=2
 num_agents=2
 for v in $values
 do
-	JOB=test_resequence_values_$v
+	JOB=test_ball_position_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --offense_on_ball --hfo_seed 123 --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
 
 values="001"
-#count=0
 port_base=40035
-# gpu_start=1
-# gpu_count=2
-num_agents+=2
+num_agents=2
 for v in $values
 do
-	JOB=test_resequence_values_$v
+	JOB=test_ball_position_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --offense_on_ball --hfo_seed 123 --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
 
 values="002"
-#count=0
 port_base=40040
-# gpu_start=0
-# gpu_count=2
-num_agents+=1
+num_agents=1
 for v in $values
 do
-	JOB=test_resequence_values_$v
+	JOB=test_ball_position_$v
 	SAVE=~/projects/dqn-hfo/state/test/$JOB
 	GPU=$(($gpu_start + $count % $gpu_count))
 	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --offense_on_ball --hfo_seed 123 --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
 	launch $JOB $SAVE "$PID"
 	count=$(($count+1))
 done
 
-values="003"
-#count=0
-port_base=40045
-# gpu_start=1
+
+# 2020-06-20
+# verify resequence features
+# values="000"
+# count=0
+# port_base=40030
+# gpu_start=0
 # gpu_count=2
-num_agents+=1
-for v in $values
-do
-	JOB=test_resequence_values_$v
-	SAVE=~/projects/dqn-hfo/state/test/$JOB
-	GPU=$(($gpu_start + $count % $gpu_count))
-	PORT=$(($port_base + ($num_agents + 1) * $count))
-	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
-	launch $JOB $SAVE "$PID"
-	count=$(($count+1))
-done
+# num_agents=2
+# for v in $values
+# do
+# 	JOB=test_resequence_values_$v
+# 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + ($num_agents + 1) * $count))
+# 	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
+
+# values="001"
+# port_base=40035
+# num_agents=2
+# for v in $values
+# do
+# 	JOB=test_resequence_values_$v
+# 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + ($num_agents + 1) * $count))
+# 	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --defense_npcs 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
+
+# values="002"
+# port_base=40040
+# num_agents=1
+# for v in $values
+# do
+# 	JOB=test_resequence_values_$v
+# 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + ($num_agents + 1) * $count))
+# 	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
+
+# values="003"
+# port_base=40045
+# num_agents=1
+# for v in $values
+# do
+# 	JOB=test_resequence_values_$v
+# 	SAVE=~/projects/dqn-hfo/state/test/$JOB
+# 	GPU=$(($gpu_start + $count % $gpu_count))
+# 	PORT=$(($port_base + ($num_agents + 1) * $count))
+# 	PID="mkdir log/test/$JOB && ~/projects/dqn-hfo/bin/dqn --evaluate --save $SAVE/ddpg --gpu_device $GPU --noremove_old_snapshots --offense_agents 1 --resequence_features --hfo_seed 123 --deterministic --log_game --game_log_dir log/test/$JOB --record_dir log/test/$JOB --port $PORT && mv log/test/$JOB/base_left-11.log log/test/$JOB.log && mv log/test/$JOB/*.rcg log/test/$JOB.rcg && mv log/test/$JOB/*.rcl log/test/$JOB.rcl && rm -r log/test/$JOB"
+# 	launch $JOB $SAVE "$PID"
+# 	count=$(($count+1))
+# done
 
 # 2020-06-19
 # Defended goal test, original feature set (59 values) and order, with offense on ball 
