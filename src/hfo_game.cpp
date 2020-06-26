@@ -22,6 +22,7 @@ DEFINE_double(ball_y_max, 0.8, "Ball Y-Position initialization maximum.");
 DEFINE_int32(offense_on_ball, 0, "Offensive player to give the ball to.");
 DEFINE_bool(beyond_kickable, false, "Whether to place ball beyond offense player's kickable range.");
 DEFINE_double(offense_ball_dist, 0, "If the ball is beyond kickable range, how much further to place it.");
+DEFINE_string(player_bounding_boxes, "", "Bounding boxes for players");
 DEFINE_bool(verbose, false, "Server prints verbose output.");
 DEFINE_int32(hfo_seed, 0, "Seed the server's RNG. Default: time.");
 DEFINE_bool(deterministic, false, "Make HFO environment deterministic.");
@@ -39,10 +40,15 @@ void StartHFOServer(int port, int offense_agents, int offense_npcs,
       + " --ball-y-min " + std::to_string(FLAGS_ball_y_min)
       + " --ball-y-max " + std::to_string(FLAGS_ball_y_max)
       + " --offense-on-ball " + std::to_string(FLAGS_offense_on_ball)
-      + " --beyond-kickable " + std::to_string(FLAGS_beyond_kickable)
-      + " --offense-ball-dist " + std::to_string(FLAGS_offense_on_ball)
       + " --untouched-time 500";
   if (!FLAGS_gui) { cmd += " --headless"; }
+  if (FLAGS_beyond_kickable) { 
+    cmd += " --beyond-kickable";
+    if (FLAGS_offense_ball_dist > 0) {
+      cmd += " --offense-ball-dist " + std::to_string(FLAGS_offense_ball_dist);
+    }
+  }
+  if (!FLAGS_player_bounding_boxes.empty()) { cmd += " --player-bounding-boxes \"" + FLAGS_player_bounding_boxes + "\""; }
   if (!FLAGS_log_game) { cmd += " --no-logging"; }
   if (FLAGS_hfo_seed != 0) { cmd += " --seed " + std::to_string(FLAGS_hfo_seed); }
   if (!FLAGS_game_log_dir.empty()) { cmd += " --log-dir " + FLAGS_game_log_dir; }
