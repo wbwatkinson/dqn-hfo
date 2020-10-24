@@ -2,6 +2,29 @@
 
 ## Baseline
 
+The basline trials are a set of trials for re-use. The following table depicts their features.
+
+| Folder                                                 | Features | Goal     |Goal Reward | On Ball | Resequence Features | Status Flag | Beta | Padding |
+|--------------------------------------------------------| --------:|----------|-----------:|---------|---------------------|-------------|-----:|-------- |
+| baseline_defended_100_reward                           |       68 | Defended |        100 | Yes     | Yes                 | Yes         |  0.2 | None    |
+| baseline_defended_5_reward                             |       68 | Defended |          5 | Yes     | Yes                 | Yes         |  0.2 | None    |
+| baseline_defended_original_wo_status                   |       67 | Defended |          5 | Yes     | No                  | No          |  0.2 | None    |
+| baseline_defended_original_wo_status_100_reward        |       67 | Defended |        100 | Yes     | No                  | No          |  0.2 | None    |
+| baseline_defended_original_wo_status_100_reward_0_beta |       67 | Defended |        100 | Yes     | No                  | No          |  0.0 | None    |
+| baseline_defended_original_wo_status_100_reward_1_beta |       67 | Defended |        100 | Yes     | No                  | No          |  1.0 | None    |
+| baseline_defended_original_w_status                    |       68 | Defended |          5 | Yes     | No                  | Yes         |  0.2 | None    |
+| baseline_defended_resequenced_wo_status                |       67 | Defended |          5 | Yes     | Yes                 | No          |  0.2 | None    |
+| baseline_empty_59                                      |       59 | Empty    |          5 | No      | Yes                 | Yes         |  0.2 | None    |
+| baseline_empty_59_resequenced_no_ball                  |       59 | Empty    |          5 | No      | Yes                 | Yes         |  0.2 | None    |
+| baseline_empty_59_resequenced_on_ball                  |       59 | Empty    |          5 | Yes     | Yes                 | Yes         |  0.2 | None    |
+| baseline_empty_68_random                               |       68 | Empty    |          5 | No      | Yes                 | Yes         |  0.2 | Random  |
+| baseline_empty_68_resequenced_on_ball_random           |       68 | Empty    |          5 | Yes     | Yes                 | Yes         |  0.2 | Random  |
+| baseline_empty_68_zeroes                               |       68 | Empty    |          5 | No      | Yes                 | Yes         |  0.2 | Zeroes  |
+| baseline_empty_resequenced_wo_status                   |       58 | Empty    |          5 | Yes     | Yes                 | No          |  0.2 | None    |
+| baseline_empty_resequenced_wo_status_padded_random     |       67 | Empty    |          5 | Yes     | Yes                 | No          |  0.2 | Random  |
+| baseline_empty_resequenced_wo_status_padded_zeros      |       67 | Empty    |          5 | Yes     | Yes                 | No          |  0.2 | Zeroes  |
+
+
 
 
 ## Chapter 2 Experiments
