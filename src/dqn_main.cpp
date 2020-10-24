@@ -382,6 +382,10 @@ void KeepPlayingGames(int tid, std::string save_prefix, int port) {
     return;
   }
   int last_eval_iter = dqn->max_iter();
+
+  if (dqn->max_iter() == 0) {
+    Evaluate(env, *dqn, tid);
+  }
   double best_score = std::numeric_limits<double>::min();
   for (int episode = 0; dqn->max_iter() < FLAGS_max_iter; ++episode) {
     double epsilon = CalculateEpsilon(dqn->max_iter());

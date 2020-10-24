@@ -4,6 +4,9 @@
 #include <HFO.hpp>
 #include <random>
 
+DECLARE_bool(exclude_status_flag); //, false, "Remove flag indicating whether previous action was successful from state features");
+// extern FLAGS_exclude_status_flag;
+
 struct Action {
   hfo::action_t action;
   float arg1;
@@ -12,7 +15,11 @@ struct Action {
 
 const
 inline int NumStateFeatures(int num_players) {
-  return 50 + 9 * (num_players);
+  if (FLAGS_exclude_status_flag) {
+    return 50 + 9 * (num_players) - 1;
+  } else {
+    return 50 + 9 * (num_players);
+  }
 }
 
 constexpr auto kPassVelThreshold = -.5;

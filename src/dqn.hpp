@@ -13,6 +13,9 @@
 #include <mutex>
 #include "hfo_game.hpp"
 
+#include <caffe/layer.hpp>
+#include <caffe/blob.hpp>
+
 namespace dqn {
 
 constexpr auto kStateInputCount = 1;

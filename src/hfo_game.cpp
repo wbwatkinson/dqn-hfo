@@ -5,7 +5,7 @@
 #include <cmath>
 
 using namespace hfo;
-DEFINE_string(server_cmd, "./bin/HFO --fullstate --frames-per-trial 500",
+DEFINE_string(server_cmd, "./bin/HFO --frames-per-trial 500",
               "Command executed to start the HFO server.");
 DEFINE_string(config_dir, "bin/formations-dt", "Directory containing HFO config files.");
 DEFINE_bool(gui, false, "Open a GUI window.");
@@ -27,6 +27,12 @@ DEFINE_bool(verbose, false, "Server prints verbose output.");
 DEFINE_int32(hfo_seed, 0, "Seed the server's RNG. Default: time.");
 DEFINE_bool(deterministic, false, "Make HFO environment deterministic.");
 DEFINE_bool(resequence_features, false, "Resequence features so additional players are additive rather than interwoven.");
+DEFINE_bool(goal_reward_only, false, "Give reward only for scoring a goal");
+DEFINE_bool(full_state, true, "Use HFO fullstate sensor values");
+DEFINE_double(goalie_dash_attenuate, 1.0, "Change goalie dash rate");
+DEFINE_double(goal_reward, 5.0, "Set reward value for scoring a goal");
+DEFINE_bool(exclude_status_flag, false, "Remove flag indicating whether previous action was successful from state features");
+
 
 void StartHFOServer(int port, int offense_agents, int offense_npcs,
                     int defense_agents, int defense_npcs) {
@@ -40,7 +46,11 @@ void StartHFOServer(int port, int offense_agents, int offense_npcs,
       + " --ball-y-min " + std::to_string(FLAGS_ball_y_min)
       + " --ball-y-max " + std::to_string(FLAGS_ball_y_max)
       + " --offense-on-ball " + std::to_string(FLAGS_offense_on_ball)
+      + " --goalie-dash-attenuate " + std::to_string(FLAGS_goalie_dash_attenuate)
       + " --untouched-time 500";
+      // + " --offense-team helios"
+      // + " --defense_team base";
+  if (FLAGS_full_state) { cmd += " --fullstate"; }
   if (!FLAGS_gui) { cmd += " --headless"; }
   if (FLAGS_beyond_kickable) { 
     cmd += " --beyond-kickable";
@@ -97,7 +107,8 @@ void ConnectToServer(hfo::HFOEnvironment& hfo_env, int port) {
                           FLAGS_team_name,
                           FLAGS_play_goalie,
                           FLAGS_record_dir,
-                          FLAGS_resequence_features);
+                          FLAGS_resequence_features,
+                          FLAGS_exclude_status_flag);
   sleep(5);
 }
 
@@ -190,9 +201,12 @@ void HFOGameState::update(HFOEnvironment& hfo) {
     kickable_delta = 0;
     ball_dist_goal_delta = 0;
   }
+  // LOG(INFO) << "Before old: Player On Ball: " << player_on_ball.unum << " Old player On Ball: " << old_player_on_ball.unum;
+
   old_player_on_ball = player_on_ball;
+  // LOG(INFO) << "After old: Player On Ball: " << player_on_ball.unum << " Old player On Ball: " << old_player_on_ball.unum;
   player_on_ball = hfo.playerOnBall();
-  VLOG(1) << "Player On Ball: " << player_on_ball.unum;
+  // LOG(INFO) << "After new: Player On Ball: " << player_on_ball.unum << " Old player On Ball: " << old_player_on_ball.unum;
   steps++;
 }
 
@@ -201,7 +215,12 @@ float HFOGameState::reward() {
   float kickToGoalReward = 3. * kick_to_goal_reward();
   float passReward = 3. * pass_reward();
   float eotReward = EOT_reward();
-  float reward = moveToBallReward + kickToGoalReward + eotReward;
+  float reward = 0.0;
+  if (FLAGS_goal_reward_only) {
+    reward = eotReward;
+  } else {
+    reward = moveToBallReward + kickToGoalReward + eotReward;
+  }
   extrinsic_reward += eotReward;
   total_reward += reward;
   VLOG(1) << "Overall_Reward: " << reward << " MTB: " << moveToBallReward
@@ -225,12 +244,12 @@ float HFOGameState::move_to_ball_reward() {
 
 // Reward for kicking ball towards the goal
 float HFOGameState::kick_to_goal_reward() {
-  if (player_on_ball.unum == our_unum) {
+  // if (player_on_ball.unum == our_unum) {
     return -ball_dist_goal_delta;
-  } else if (got_kickable_reward) { // We have passed to teammate
-    return 0.2 * -ball_dist_goal_delta;
-  }
-  return 0;
+  // } else if (got_kickable_reward) { // We have passed to teammate
+    // return 0.2 * -ball_dist_goal_delta;
+  // }
+  // return 0;
 }
 
 float HFOGameState::EOT_reward() {
@@ -238,14 +257,17 @@ float HFOGameState::EOT_reward() {
     CHECK(old_player_on_ball.side == LEFT) << "Unexpected side: "
                                            << old_player_on_ball.side;
 
-    // return 5.0;
-    if (player_on_ball.unum == our_unum) {
-      VLOG(1) << "We Scored!";
-      return 5;
-    } else {
-      VLOG(1) << "Teammate Scored!";
-      return 1;
-    }
+    return FLAGS_goal_reward;
+
+    return 5.0;
+    // LOG(INFO) << "Player unum: " << player_on_ball.unum << " " << "Our unum: " << our_unum;                      
+    // if (old_player_on_ball.unum == our_unum) {
+    //   LOG(INFO) << "We Scored!";
+    //   return 5;
+    // } else {
+    //   LOG(INFO) << "Teammate Scored!";
+    //   return 1;
+    // }
   } else if (status == CAPTURED_BY_DEFENSE) {
     return 0;
   }

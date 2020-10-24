@@ -14,6 +14,8 @@
 #include <chrono>
 #include <caffe/layers/memory_data_layer.hpp>
 
+#include <boost/type_index.hpp>
+
 namespace dqn {
 
 using namespace hfo;
@@ -29,6 +31,9 @@ DEFINE_int32(snapshot_freq, 10000, "Frequency (steps) snapshots");
 DEFINE_bool(remove_old_snapshots, true, "Remove old snapshots when writing more recent ones.");
 DEFINE_bool(snapshot_memory, true, "Snapshot the replay memory along with the network.");
 DEFINE_double(beta, .5, "Mix between off-policy and on-policy updates.");
+DEFINE_bool(freeze_inner_layers, false, "Freeze inner layers for fine-tuning or training.");
+DEFINE_string(first_layer_name, "ip1_layer", "First layer name");
+DEFINE_bool(transfer_weights, false, "Transfer the weights of differently-sized layers having the same name.");
 
 template <typename Dtype>
 void HasBlobSize(caffe::Net<Dtype>& net,
@@ -50,11 +55,11 @@ void HasBlobSize(caffe::Net<Dtype>& net,
   std::copy(expected_shape.begin(), expected_shape.end()-1, std::ostream_iterator<int>(expected_stream, ","));
   expected_stream << expected_shape.back();
 
-  LOG(INFO) << "Blob " << blob_name << "Shape: " << blob_stream.str() << " / " << "Expected Shape: " << expected_stream.str();
+  LOG(INFO) << "Blob " << blob_name << " Shape: " << blob_stream.str() << " / " << "Expected Shape: " << expected_stream.str();
 
-  CHECK(std::equal(blob_shape.begin(), blob_shape.end(),
-                   expected_shape.begin()))
-      << "Blob \"" << blob_name << "\" failed dimension check.";
+  // CHECK(std::equal(blob_shape.begin(), blob_shape.end(),
+  //                  expected_shape.begin())) // commented out for testing
+      // << "Blob \"" << blob_name << "\" failed dimension check.";
 }
 
 // Returns the index of the layer matching the given layer_name or -1
@@ -107,6 +112,24 @@ void ZeroGradParameters(caffe::Net<Dtype>& net) {
       case caffe::Caffe::GPU:
         caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
                              blob->mutable_cpu_diff());
+        break;
+    }
+  }
+}
+
+// Zeros the parameters
+template <typename Dtype>
+void ZeroParameters(caffe::Net<Dtype>& net) {
+  for (int i = 0; i < net.params().size(); ++i) {
+    caffe::shared_ptr<caffe::Blob<Dtype> > blob = net.params()[i];
+    switch (caffe::Caffe::mode()) {
+      case caffe::Caffe::CPU:
+        caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
+                         blob->mutable_cpu_data());
+        break;
+      case caffe::Caffe::GPU:
+        caffe::caffe_set(blob->count(), static_cast<Dtype>(0),
+                             blob->mutable_cpu_data());
         break;
     }
   }
@@ -378,7 +401,8 @@ void IPLayer(caffe::NetParameter& net_param,
              const std::vector<std::string>& bottoms,
              const std::vector<std::string>& tops,
              const boost::optional<caffe::Phase>& include_phase,
-             const int num_output) {
+             const int num_output,
+             const bool freeze = false) {
   caffe::LayerParameter& layer = *net_param.add_layer();
   PopulateLayer(layer, name, "InnerProduct", bottoms, tops, include_phase);
   caffe::InnerProductParameter* ip_param = layer.mutable_inner_product_param();
@@ -389,6 +413,20 @@ void IPLayer(caffe::NetParameter& net_param,
   // caffe::FillerParameter* bias_filler = ip_param->mutable_bias_filler();
   // bias_filler->set_type("constant");
   // bias_filler->set_value(1);
+
+  //LayerParameter* x_transform_param = net_param->add_layer();
+  //x_transform_param->add_param()->set_name("W_xh");
+  //x_transform_param->add_param()->set_name("b_h");
+  // caffe::ParamSpec& layer_params1 = *layer.add_param();
+  // layer_params1.set_lr_mult(0);
+  // layer_params1.set_decay_mult(0);
+
+  if (freeze) {
+    caffe::ParamSpec& layer_params2 = *layer.add_param();
+    layer_params2.set_lr_mult(0);
+    layer_params2.set_decay_mult(0);
+  }
+
 }
 void EuclideanLossLayer(caffe::NetParameter& net_param,
                         const std::string& name,
@@ -439,9 +477,26 @@ std::string Tower(caffe::NetParameter& np,
                   const std::vector<int>& layer_sizes) {
   std::string input_name = input_blob_name;
   for (int i=1; i<layer_sizes.size()+1; ++i) {
-    std::string layer_name = layer_prefix + "ip" + std::to_string(i) + "_layer";
+
+    std::string layer_name;
+    if (i==1) {
+      layer_name = FLAGS_first_layer_name;
+    } else {
+      layer_name = layer_prefix + "ip" + std::to_string(i) + "_layer";
+    }
     std::string top_name = layer_prefix + "ip" + std::to_string(i);
-    IPLayer(np, layer_name, {input_name}, {top_name}, boost::none, layer_sizes[i-1]);
+
+    if (FLAGS_freeze_inner_layers) {
+      // freeze inner layers
+      if (i>1) {
+        IPLayer(np, layer_name, {input_name}, {top_name}, boost::none, layer_sizes[i-1], true);
+      } else {
+        IPLayer(np, layer_name, {input_name}, {top_name}, boost::none, layer_sizes[i-1], false);
+      }
+    } else {
+        IPLayer(np, layer_name, {input_name}, {top_name}, boost::none, layer_sizes[i-1], false);
+    }
+
     layer_name = layer_prefix + "ip" + std::to_string(i) + "_relu_layer";
     ReluLayer(np, layer_name, {top_name}, {top_name}, boost::none);
     // layer_name = layer_prefix + "bn" + std::to_string(i) + "_layer";
@@ -559,19 +614,111 @@ std::vector<InputStates> DQN::SampleStatesFromMemory(int n) {
   return states_batch;
 }
 
+
+template <typename Dtype>
+void TransferWeights(const std::string& weights_file, caffe::Net<Dtype>& net) {
+  caffe::NetParameter param;
+  ReadNetParamsFromBinaryFileOrDie(weights_file, &param);
+
+  int num_source_layers = param.layer_size();
+  for (int i = 0; i < num_source_layers; ++i) {
+    const caffe::LayerParameter& source_layer = param.layer(i);
+    const std::string& source_layer_name = source_layer.name();
+    int target_layer_id = 0;
+
+    // find current source layer name in target layers, target id
+    while (target_layer_id != net.layer_names().size() && 
+      net.layer_names()[target_layer_id] != source_layer_name) {
+      ++target_layer_id;
+    }
+    // if not found, skip source layer
+    if (target_layer_id == net.layer_names().size()) {
+      LOG(INFO) << "Ignoring source layer " << source_layer_name;
+      continue;
+    }
+
+    LOG(INFO) << "Copying source layer " << source_layer_name;
+    std::vector<boost::shared_ptr<caffe::Blob<float>>>& target_blobs = net.layers()[target_layer_id]->blobs();
+
+    // verify target and source layers have the same number of blobs
+    CHECK_EQ(target_blobs.size(), source_layer.blobs_size()) << "Incompatible number of blobs for layer " << source_layer_name;
+
+    for (int j = 0; j < target_blobs.size(); ++j) {
+
+      if (!target_blobs[j]->ShapeEquals(source_layer.blobs(j))) {
+        // zero target_blob
+        caffe::caffe_set(target_blobs[j]->count(), static_cast<Dtype>(0), target_blobs[j]->mutable_cpu_data());
+
+        caffe::Blob<float> source_blob;
+
+        std::vector<int> source_shape;
+        if (source_layer.blobs(j).has_num() || source_layer.blobs(j).has_channels() || source_layer.blobs(j).has_height() || source_layer.blobs(j).has_width()) {
+          LOG(FATAL) << "Unexpected blob type.";
+        } else {
+          source_shape.resize(source_layer.blobs(j).shape().dim_size());
+          for (int k = 0; k < source_shape.size(); ++k) {
+            source_shape[k] = source_layer.blobs(j).shape().dim(k);
+          }
+        }
+
+        LOG(INFO) << source_layer_name << " Blob " << j 
+          << " target shape(" << target_blobs[j]->num() << ", " << target_blobs[j]->channels() << ", " << target_blobs[j]->height() << ", " << target_blobs[j]->width() << ")" 
+          << " source shape(" << source_blob.shape_string() << ") ";
+
+        float* target_values_data = target_blobs[j]->mutable_cpu_data();
+
+        // source shape is either 2 or 1
+        if (source_shape.size() == 2) {
+          // for (int idx0 = 0; idx0 < source_shape[0]; ++idx0) {
+          //   for (int idx1 = 0; idx1 < source_shape[1]; ++idx1) {
+          for (int idx0 = 0; idx0 < target_blobs[j]->num(); ++idx0) {
+            for (int idx1 = 0; idx1 < target_blobs[j]->channels(); ++idx1) {
+              if (idx0 < source_shape[0] && idx1 < source_shape[1]) {
+                target_values_data[target_blobs[j]->offset(idx0, idx1, 0, 0)] = source_layer.blobs(j).data(source_shape[1] * idx0 + idx1);
+              }
+
+              LOG(INFO) << source_layer_name << " Blob " << j << " num " << idx0 << " channel " << idx1 << " idx " << source_shape[1] * idx0 + idx1 
+                        << " Source: " << source_layer.blobs(j).data(source_shape[1] * idx0 + idx1) << " Target: " << target_blobs[j]->data_at(idx0, idx1, 0, 0);
+              // CHECK_EQ(source_layer.blobs(j).data(source_shape[1] * idx0 + idx1), target_blobs[j]->data_at(idx0, idx1, 0, 0));
+            }
+          }
+        } else if (source_shape.size() == 1) {
+          for (int idx0 = 0; idx0 < source_shape[0]; ++idx0) {
+            LOG(INFO) << source_layer_name << " Blob " << j << " num " << idx0 << " value " << source_layer.blobs(j).data(idx0) << " " << target_blobs[j]->data_at(idx0, 0, 0, 0);
+            // CHECK_EQ(source_layer.blobs(j).data(idx0), target_blobs[j]->data_at(idx0, 0, 0, 0));
+          }
+        }
+      } else {
+        const bool kReshape = false;
+        target_blobs[j]->FromProto(source_layer.blobs(j), kReshape);
+      }
+    }
+  }
+}
+
 void DQN::LoadActorWeights(const std::string& actor_weights) {
-  CHECK(boost::filesystem::is_regular_file(actor_weights))
-      << "Invalid file: " << actor_weights;
+
+  CHECK(boost::filesystem::is_regular_file(actor_weights)) << "Invalid file: " << actor_weights;
   LOG(INFO) << "Actor weights finetuning from " << actor_weights;
-  actor_net_->CopyTrainedLayersFrom(actor_weights);
+
+  if (FLAGS_transfer_weights) {
+    TransferWeights(actor_weights, *actor_net_);
+  } else {
+    actor_net_->CopyTrainedLayersFrom(actor_weights);
+  }
   CloneNet(actor_net_, actor_target_net_);
 }
 
 void DQN::LoadCriticWeights(const std::string& critic_weights) {
-  CHECK(boost::filesystem::is_regular_file(critic_weights))
-      << "Invalid file: " << critic_weights;
+
+  CHECK(boost::filesystem::is_regular_file(critic_weights)) << "Invalid file: " << critic_weights;
   LOG(INFO) << "Critic weights finetuning from " << critic_weights;
-  critic_net_->CopyTrainedLayersFrom(critic_weights);
+
+  if (FLAGS_transfer_weights) {
+    TransferWeights(critic_weights, *critic_net_);
+  } else {
+    critic_net_->CopyTrainedLayersFrom(critic_weights);
+  }
   CloneNet(critic_net_, critic_target_net_);
 }
 
@@ -579,6 +726,7 @@ void DQN::RestoreActorSolver(const std::string& actor_solver) {
   CHECK(boost::filesystem::is_regular_file(actor_solver))
       << "Invalid file: " << actor_solver;
   LOG(INFO) << "Actor solver state resuming from " << actor_solver;
+  LOG(INFO) << "file name " << actor_solver.c_str();
   actor_solver_->Restore(actor_solver.c_str());
   CloneNet(actor_net_, actor_target_net_);
   last_snapshot_iter_ = max_iter();
